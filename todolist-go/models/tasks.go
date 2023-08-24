@@ -7,5 +7,5 @@ import (
 type Task struct {
   gorm.Model
   task string 
-  user_id uint 
+  completed bool
 } 

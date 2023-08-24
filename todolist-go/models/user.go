@@ -6,6 +6,7 @@ import (
 
 type User struct {
   gorm.Model
-  name string 
+  name string  `gorm:"type:varchar(255);not null"`
+  email string `gorm:"uniqueIndex;not null"`
   tasks []Task
 } 
