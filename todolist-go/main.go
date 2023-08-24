@@ -3,7 +3,7 @@ package main
 import (
   "net/http"
   "github.com/gin-gonic/gin"
-  "github.com/KingLeak95/PracticeCode/todolist-go/models"
+  "github.com/KingLeak95/PracticeCide/todolist-go/models"
 )
 
 func createUser(c *gin.Context) {
