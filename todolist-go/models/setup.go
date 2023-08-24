@@ -2,7 +2,7 @@ package models
 
 import (
   "gorm.io/gorm"
-  _ "gorm.io/driver/sqlite"
+  "gorm.io/driver/sqlite"
 )
 
 var DB *gorm.DB
