@@ -19,3 +19,4 @@ Create a TodoList App w/ Go that can be deployed to K8s and be access locally by
 
 ## Random Bugs/Lessons to Live by
 - Maybe Martini would have been better but lets see what happens (Famous last words)
+- Make everything in the GOPATH cause this stuff is hard
