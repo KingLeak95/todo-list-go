@@ -1,4 +1,4 @@
-module github.com/KingLeak95/PracticeCide/todolist-go
+module todolist-go
 
 go 1.21.0
 
