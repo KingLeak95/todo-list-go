@@ -65,10 +65,8 @@ func GetAllUsers(c *gin.Context) {
 }
 
 func DeleteUser(c *gin.Context) {
-	// Get ID from URL
 	id := c.Param("id")
 
-	// Lookup the user by ID
 	var user User
 	if err := DB.Where("id = ?", id).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -79,7 +77,6 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	// Delete the user
 	if err := DB.Delete(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete user"})
 		return
