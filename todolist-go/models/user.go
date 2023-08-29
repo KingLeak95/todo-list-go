@@ -22,7 +22,7 @@ type NewUser struct {
 
 func CreateUser(c *gin.Context) {
 	var input NewUser
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.ShouldBind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Format"})
 		return
 	}
@@ -64,6 +64,26 @@ func GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": allUsers})
 }
 
-func GetUserEmail(c *gin.Context) {
+func DeleteUser(c *gin.Context) {
+	// Get ID from URL
+	id := c.Param("id")
 
+	// Lookup the user by ID
+	var user User
+	if err := DB.Where("id = ?", id).First(&user).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve user"})
+		}
+		return
+	}
+
+	// Delete the user
+	if err := DB.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": id})
 }
