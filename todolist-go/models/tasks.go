@@ -1,11 +1,12 @@
 package models
 
 import (
-  "gorm.io/gorm"
+	"gorm.io/gorm"
 )
 
 type Task struct {
-  gorm.Model
-  task string 
-  completed bool
-} 
+	gorm.Model
+	Task      string `gorm:"column:name;type:varchar(255);not null"`
+	Completed bool
+	UserID    int `gorm:"foreignKey:user_id"`
+}
