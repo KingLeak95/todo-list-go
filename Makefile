@@ -6,7 +6,7 @@ run: build
 	./${BINARY_NAME}
 
 test:
-	go test -v main.go
+	find . -name go.mod -execdir go test ./... \;
 
 build:
 	go build -o ${BINARY_NAME} main.go
