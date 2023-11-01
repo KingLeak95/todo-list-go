@@ -1,14 +1,10 @@
 package main
 
 import (
+	"github.com/KingLeak95/todo-list-go/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"github.com/KingLeak95/todo-list-go/models"
 )
-
-func createUser(c *gin.Context) {
-
-}
 
 func main() {
 	r := gin.Default()

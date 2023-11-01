@@ -24,3 +24,17 @@ jobs:
     - name: Build
       run: go build -v ./...
 
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t todo-list:latest .
+
+      - name: Run Docker container
+        run: |
+          docker run --rm to-do-list:latest
