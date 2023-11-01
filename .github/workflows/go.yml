@@ -33,7 +33,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t todo-list:latest .
+          docker build -t to-do-list:latest .
 
       - name: Run Docker container
         run: |
