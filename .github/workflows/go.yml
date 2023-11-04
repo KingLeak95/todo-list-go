@@ -29,7 +29,7 @@ jobs:
     
     services:
       postgres:
-        image: postgres:alpine
+        image: postgres
 
         env:
           POSTGRES_PASSWORD: postgres
@@ -55,4 +55,4 @@ jobs:
 
       - name: Run Docker container
         run: |
-          docker run --rm to-do-list:latest
+          docker run --rm -e DB_HOST=localhost to-do-list:latest
