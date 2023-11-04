@@ -21,11 +21,11 @@ build:
 docker-build:
 	docker build -t to-do-list .
 
-docker-start: 	
+docker-start: postgres-start 	
 	docker run --name "app-${LOCAL_APP_CONTAINERNAME}" \
 	--network="${LOCAL_NETWORK}" \
 	-p 8080:8080 \
-	-e DB_HOST="postgres-todolist" \
+	-e DB_HOST="postgres-${LOCAL_PG_CONTAINERNAME}"
 	to-do-list
 
 postgres-start:
@@ -35,7 +35,7 @@ postgres-start:
         -e POSTGRES_DB="${LOCAL_PG_DBNAME}" \
         -p "${LOCAL_PG_PORT}":5432 \
 				--network="${LOCAL_NETWORK}" \
-        postgres >&2
+        postgres >&2 || true
 
 postgres-stop:
 	docker stop postgres-${LOCAL_PG_CONTAINERNAME} || true
