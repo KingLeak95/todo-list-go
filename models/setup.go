@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"os"
+	"strconv"
 )
 
 var DB *gorm.DB
@@ -18,11 +20,11 @@ type connection struct {
 
 func NewDBConnection() *connection {
 	return &connection{
-		host:     "localhost",
-		dbname:   "todolist",
-		user:     "postgres",
-		password: "postgres",
-		port:     5432,
+		host:     getEnv("DB_HOST", "localhost"),
+		dbname:   getEnv("DB_NAME", "todolist"),
+		user:     getEnv("DB_USER", "postgres"),
+		password: getEnv("DB_PASSWORD", "postgres"),
+		port:     getEnvInt("DB_PORT", 5432),
 	}
 }
 
@@ -45,4 +47,20 @@ func ConnectDatabase() {
 	}
 
 	DB = database
+}
+
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	if valueStr, ok := os.LookupEnv(key); ok {
+		if value, err := strconv.Atoi(valueStr); err == nil {
+			return value
+		}
+	}
+	return fallback
 }
