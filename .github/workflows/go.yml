@@ -26,6 +26,24 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres
+
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: todolist
+
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
 
     steps:
       - name: Checkout code
@@ -37,4 +55,4 @@ jobs:
 
       - name: Run Docker container
         run: |
-          docker run --rm to-do-list:latest
+          docker run --rm -e DB_HOST=postgres to-do-list:latest
