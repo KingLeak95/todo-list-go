@@ -42,7 +42,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build test image
-        run: docker build -f Dockerfile.test -t to-do-list-test:latest .
+        working-directory: ${{ github.workspace }}
+        run: docker build -f ./Dockerfile.test -t to-do-list-test:latest ${{ github.workspace }}
 
       - name: Run tests in Docker
+        working-directory: ${{ github.workspace }}
         run: docker run --rm to-do-list-test:latest
