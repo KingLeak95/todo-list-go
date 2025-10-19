@@ -1,0 +1,14 @@
+FROM golang:1.21-alpine3.18 AS test
+
+WORKDIR /app
+RUN apk add --no-cache git build-base
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Run tests by default; allow override with CMD
+CMD ["/bin/sh", "-lc", "go test ./..."]
+
+
