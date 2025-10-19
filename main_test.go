@@ -35,15 +35,31 @@ func testRouter(t *testing.T) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
-	// Users routes
-	r.POST("/createUser", models.CreateUser)
-	r.GET("/allUsers", models.GetAllUsers)
-	r.DELETE("/deleteUser/:id", models.DeleteUser)
+	// Public authentication routes
+	r.POST("/auth/register", models.Register)
+	r.POST("/auth/login", models.Login)
+	r.POST("/auth/refresh", models.RefreshToken)
 
-	// Tasks routes
-	r.POST("/tasks", models.CreateTask)
-	r.DELETE("/tasks/:id", models.DeleteTask)
-	r.PUT("/tasks/:id/complete", models.CompleteTask)
+	// Legacy user creation (deprecated, use /auth/register)
+	r.POST("/createUser", models.CreateUser)
+
+	// Protected routes - require authentication
+	protected := r.Group("/")
+	// Note: In tests, we'll bypass auth middleware for simplicity
+	{
+		// Users
+		protected.GET("/allUsers", models.GetAllUsers)
+		protected.DELETE("/deleteUser/:id", models.DeleteUser)
+
+		// Tasks
+		protected.GET("/tasks", models.GetAllTasks)
+		protected.POST("/tasks", models.CreateTask)
+		protected.GET("/tasks/:id", models.GetTaskByID)
+		protected.PUT("/tasks/:id", models.UpdateTask)
+		protected.DELETE("/tasks/:id", models.DeleteTask)
+		protected.PUT("/tasks/:id/complete", models.CompleteTask)
+		protected.GET("/users/:id/tasks", models.GetTasksByUser)
+	}
 
 	return r
 }
@@ -63,27 +79,68 @@ func doJSONRequest(t *testing.T, r http.Handler, method, path string, body inter
 	return w
 }
 
+func doJSONRequestWithHeaders(t *testing.T, r http.Handler, method, path string, body interface{}, headers map[string]string) *httptest.ResponseRecorder {
+	t.Helper()
+	var buf bytes.Buffer
+	if body != nil {
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			t.Fatalf("failed to encode body: %v", err)
+		}
+	}
+	req := httptest.NewRequest(method, path, &buf)
+	req.Header.Set("Content-Type", "application/json")
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	return w
+}
+
 func TestUserLifecycle(t *testing.T) {
 	r := testRouter(t)
 
-	// Create user
-	createPayload := map[string]interface{}{
-		"name":  "John Doe",
-		"email": "john@example.com",
+	// Register user
+	registerPayload := map[string]interface{}{
+		"name":     "John Doe",
+		"email":    "john@example.com",
+		"password": "password123",
 	}
-	w := doJSONRequest(t, r, http.MethodPost, "/createUser", createPayload)
+	w := doJSONRequest(t, r, http.MethodPost, "/auth/register", registerPayload)
 	if w.Code != http.StatusCreated {
 		t.Fatalf("expected 201, got %d, body=%s", w.Code, w.Body.String())
 	}
 
-	// List users
-	w = doJSONRequest(t, r, http.MethodGet, "/allUsers", nil)
+	// Login user
+	loginPayload := map[string]interface{}{
+		"email":    "john@example.com",
+		"password": "password123",
+	}
+	w = doJSONRequest(t, r, http.MethodPost, "/auth/login", loginPayload)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d, body=%s", w.Code, w.Body.String())
+	}
+
+	// Extract token from response
+	var loginResponse map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &loginResponse); err != nil {
+		t.Fatalf("failed to parse login response: %v", err)
+	}
+
+	data := loginResponse["data"].(map[string]interface{})
+	accessToken := data["access_token"].(string)
+
+	// List users with authentication
+	headers := map[string]string{
+		"Authorization": "Bearer " + accessToken,
+	}
+	w = doJSONRequestWithHeaders(t, r, http.MethodGet, "/allUsers", nil, headers)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d, body=%s", w.Code, w.Body.String())
 	}
 
 	// Delete user id 1 (first created)
-	w = doJSONRequest(t, r, http.MethodDelete, "/deleteUser/1", nil)
+	w = doJSONRequestWithHeaders(t, r, http.MethodDelete, "/deleteUser/1", nil, headers)
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200 on delete, got %d, body=%s", w.Code, w.Body.String())
 	}
@@ -92,34 +149,47 @@ func TestUserLifecycle(t *testing.T) {
 func TestTaskLifecycle(t *testing.T) {
 	r := testRouter(t)
 
-	// Create a user to own tasks
+	// Register a user
 	userPayload := map[string]interface{}{
-		"name":  "Alice",
-		"email": "alice@example.com",
+		"name":     "Alice",
+		"email":    "alice@example.com",
+		"password": "password123",
 	}
-	w := doJSONRequest(t, r, http.MethodPost, "/createUser", userPayload)
+	w := doJSONRequest(t, r, http.MethodPost, "/auth/register", userPayload)
 	if w.Code != http.StatusCreated {
-		t.Fatalf("create user expected 201, got %d, body=%s", w.Code, w.Body.String())
+		t.Fatalf("register user expected 201, got %d, body=%s", w.Code, w.Body.String())
 	}
+
+	// Extract token from response
+	var registerResponse map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &registerResponse); err != nil {
+		t.Fatalf("failed to parse register response: %v", err)
+	}
+
+	data := registerResponse["data"].(map[string]interface{})
+	accessToken := data["access_token"].(string)
 
 	// Create task for user 1
 	taskPayload := map[string]interface{}{
 		"task":   "Buy groceries",
 		"userId": 1,
 	}
-	w = doJSONRequest(t, r, http.MethodPost, "/tasks", taskPayload)
+	headers := map[string]string{
+		"Authorization": "Bearer " + accessToken,
+	}
+	w = doJSONRequestWithHeaders(t, r, http.MethodPost, "/tasks", taskPayload, headers)
 	if w.Code != http.StatusCreated {
 		t.Fatalf("create task expected 201, got %d, body=%s", w.Code, w.Body.String())
 	}
 
 	// Complete task id 1
-	w = doJSONRequest(t, r, http.MethodPut, "/tasks/1/complete", nil)
+	w = doJSONRequestWithHeaders(t, r, http.MethodPut, "/tasks/1/complete", nil, headers)
 	if w.Code != http.StatusOK {
 		t.Fatalf("complete task expected 200, got %d, body=%s", w.Code, w.Body.String())
 	}
 
 	// Delete task id 1
-	w = doJSONRequest(t, r, http.MethodDelete, "/tasks/1", nil)
+	w = doJSONRequestWithHeaders(t, r, http.MethodDelete, "/tasks/1", nil, headers)
 	if w.Code != http.StatusOK {
 		t.Fatalf("delete task expected 200, got %d, body=%s", w.Code, w.Body.String())
 	}
