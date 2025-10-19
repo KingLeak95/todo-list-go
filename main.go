@@ -1,9 +1,10 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/KingLeak95/todo-list-go/models"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func main() {
@@ -25,6 +26,11 @@ func main() {
 	r.POST("/createUser", models.CreateUser)
 	r.GET("/allUsers", models.GetAllUsers)
 	r.DELETE("/deleteUser/:id", models.DeleteUser)
+
+	// Tasks
+	r.POST("/tasks", models.CreateTask)
+	r.DELETE("/tasks/:id", models.DeleteTask)
+	r.PUT("/tasks/:id/complete", models.CompleteTask)
 
 	r.Run()
 }

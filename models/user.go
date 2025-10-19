@@ -2,10 +2,11 @@ package models
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -16,8 +17,8 @@ type User struct {
 }
 
 type NewUser struct {
-	Name  string `json:”name”`
-	Email string `json:”email”`
+	Name  string `json:"name"`
+	Email string `json:"email"`
 }
 
 func CreateUser(c *gin.Context) {
