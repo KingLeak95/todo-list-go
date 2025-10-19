@@ -9,7 +9,7 @@ LOCAL_APP_CONTAINERNAME=todolist
 
 all: run
 
-.PHONY: all run test build docker-build docker-start postgres-start postgres-stop clean
+.PHONY: all run test build docker-build docker-start postgres-start postgres-stop clean docker-compose-up docker-compose-down
 DOCKER_TEST_IMAGE=to-do-list-test:latest
 
 run: build
@@ -53,3 +53,12 @@ clean: postgres-stop
 	docker rm postgres-${LOCAL_PG_CONTAINERNAME} || true 
 	go clean
 	rm ${BINARY_NAME}
+
+docker-compose-up:
+	docker-compose up -d
+
+docker-compose-down:
+	docker-compose down
+
+docker-compose-logs:
+	docker-compose logs -f

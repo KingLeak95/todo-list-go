@@ -188,6 +188,9 @@ make build             # Build binary
 make run               # Build and run
 make docker-build      # Build Docker image
 make docker-test       # Run tests in Docker
+make docker-compose-up # Start with Docker Compose
+make docker-compose-down # Stop Docker Compose
+make docker-compose-logs # View Docker Compose logs
 make clean             # Clean up
 ```
 
