@@ -9,17 +9,26 @@ LOCAL_APP_CONTAINERNAME=todolist
 
 all: run
 
+.PHONY: all run test build docker-build docker-start postgres-start postgres-stop clean
+DOCKER_TEST_IMAGE=to-do-list-test:latest
+
 run: build
 	./${BINARY_NAME}
 
 test:
-	find . -name go.mod -execdir go test ./... \;
+	go test ./...
 
 build:
 	go build -o ${BINARY_NAME} main.go
 
 docker-build:
 	docker build -t to-do-list .
+
+docker-test-build:
+	docker build -f Dockerfile.test -t ${DOCKER_TEST_IMAGE} .
+
+docker-test: docker-test-build
+	docker run --rm ${DOCKER_TEST_IMAGE}
 
 docker-start: postgres-start 	
 	docker run --name "app-${LOCAL_APP_CONTAINERNAME}" \

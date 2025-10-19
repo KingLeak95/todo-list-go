@@ -1,6 +1,4 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
+# This workflow will build and test the golang project
 name: Go
 
 on:
@@ -10,49 +8,41 @@ on:
     branches: [ "main" ]
 
 jobs:
-
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21.x'
 
-    - name: Build
-      run: go build -v ./...
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
-  docker:
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test ./...
+
+  dockerized-tests:
     runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres
-
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          POSTGRES_DB: todolist
-
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build Docker image
-        run: |
-          docker build -t to-do-list:latest .
+      - name: Build test image
+        run: docker build -f Dockerfile.test -t to-do-list-test:latest .
 
-      - name: Run Docker container
-        run: |
-          docker run --rm -e DB_HOST=localhost to-do-list:latest
+      - name: Run tests in Docker
+        run: docker run --rm to-do-list-test:latest
